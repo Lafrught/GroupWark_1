@@ -12660,7 +12660,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4332971346465279854, guid: 7724d6845206fb845a0cdf88090bbfec, type: 3}
       propertyPath: m_TagString
-      value: Item
+      value: Untagged
       objectReference: {fileID: 0}
     - target: {fileID: 6434167403543593139, guid: 7724d6845206fb845a0cdf88090bbfec, type: 3}
       propertyPath: m_LocalScale.x
