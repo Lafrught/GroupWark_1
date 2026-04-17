@@ -7,7 +7,12 @@ public class CameraFollow : MonoBehaviour
 
     private void LateUpdate()
     {
+        if (target == null) return;
+
+        // 位置追従
         transform.position = target.position + offset;
-        transform.rotation = Quaternion.Euler(45f, 0f, 0f);
+
+        // ターゲットを見る
+        transform.LookAt(target.position);
     }
 }

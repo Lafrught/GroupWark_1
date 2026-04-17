@@ -1,35 +1,50 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 [RequireComponent(typeof(Rigidbody))]
 public class PlayerMovement : MonoBehaviour
 {
+    [Header("Input")]
     [SerializeField] private InputActionReference moveAction;
-    [SerializeField] private InputActionReference dashAction; // ← 追加
+    [SerializeField] private InputActionReference dashAction;
 
+    [Header("Movement")]
     [SerializeField] private float speed = 4f;
-    [SerializeField] private float dashSpeed = 8f; // ← 追加
+    [SerializeField] private float dashSpeed = 8f;
     [SerializeField] private float rotationSpeed = 8f;
+
+    [Header("Stamina")]
+    [SerializeField] private float maxStamina = 100f;
+    [SerializeField] private float staminaDecreaseRate = 20f;
+
+    [Header("UI")]
+    [SerializeField] private Text staminaText; // 
 
     private Rigidbody rb;
     private Vector2 input;
     private bool isDashing;
 
+    private float currentStamina;
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
+        currentStamina = maxStamina;
+
+        UpdateStaminaText();
     }
 
     private void OnEnable()
     {
         moveAction.action.Enable();
-        dashAction.action.Enable(); // ← 追加
+        dashAction.action.Enable();
     }
 
     private void OnDisable()
     {
         moveAction.action.Disable();
-        dashAction.action.Disable(); // ← 追加
+        dashAction.action.Disable();
     }
 
     private void Update()
@@ -37,16 +52,31 @@ public class PlayerMovement : MonoBehaviour
         // 入力取得
         input = moveAction.action.ReadValue<Vector2>();
 
-        // ダッシュ入力（押している間だけダッシュ）
-        isDashing = dashAction.action.IsPressed();
+        bool isMoving = input != Vector2.zero;
+
+        // ダッシュ判定（スタミナがある時のみ）
+        bool dashInput = dashAction.action.IsPressed();
+        isDashing = dashInput && currentStamina > 0f;
+
+        //スタミナ減少処理
+        if (isMoving && currentStamina > 0f)
+        {
+            float decreaseRate = isDashing
+                ? staminaDecreaseRate              // ダッシュ時
+                : staminaDecreaseRate * 0.5f;      // 歩き時（半分）
+
+            currentStamina -= decreaseRate * Time.deltaTime;
+            currentStamina = Mathf.Max(currentStamina, 0f);
+        }
+
+        // UI更新
+        UpdateStaminaText();
     }
 
     private void FixedUpdate()
     {
-        // 入力をワールド方向に変換（XZ平面）
         Vector3 move = new Vector3(input.x, 0, input.y);
 
-        // 速度切り替え
         float currentSpeed = isDashing ? dashSpeed : speed;
 
         // 移動
@@ -54,7 +84,7 @@ public class PlayerMovement : MonoBehaviour
             rb.position + move * currentSpeed * Time.fixedDeltaTime
         );
 
-        // 回転（移動方向に向く）
+        // 回転
         if (move != Vector3.zero)
         {
             Quaternion targetRotation = Quaternion.LookRotation(move);
@@ -66,6 +96,28 @@ public class PlayerMovement : MonoBehaviour
                     rotationSpeed * Time.fixedDeltaTime
                 )
             );
+        }
+    }
+
+    private void UpdateStaminaText()
+    {
+        if (staminaText == null) return;
+
+        int staminaInt = Mathf.CeilToInt(currentStamina);
+        staminaText.text =  staminaInt + " / " + maxStamina;
+
+        // 段階で色変更
+        if (staminaInt >= 200)
+        {
+            staminaText.color = Color.white;
+        }
+        else if (staminaInt >= 50)
+        {
+            staminaText.color = Color.yellow;
+        }
+        else
+        {
+            staminaText.color = Color.red;
         }
     }
 }
